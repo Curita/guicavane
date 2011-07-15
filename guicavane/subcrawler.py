@@ -1,5 +1,8 @@
 import xmlrpclib
+import urllib
 import socket
+import gzip
+import os
 
 class SubCrawler(object):
 
@@ -27,7 +30,15 @@ class SubCrawler(object):
                 result["link"] = r["SubDownloadLink"]
                 #result["lang"] = r["SubLanguageID"]
                 sublinks.append(result)
-        print sublinks
-        print token
-        print search
         self.server.LogOut(token)
+
+        for subtitle in sublinks:
+            print subtitle
+            destfile = subtitle["link"].split("/")[-1]
+            filename, info = urllib.urlretrieve(subtitle["link"], "/tmp/" + destfile)
+            gzfile = gzip.open(filename)
+            subfile = open("/tmp/" + name + destfile.replace(".gz", ""), "w")
+            subfile.write(gzfile.read())
+            subfile.close()
+            gzfile.close()
+            os.remove(filename)
