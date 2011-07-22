@@ -645,6 +645,7 @@ class GUIHandler:
 
         episode_found = self.pycavane.episode_by_name(selected_episode,
                                                       show, seasson)
+        self.episode = episode_found
 
         self.background_task(self.player.play, self.on_player_finish,
                              episode_found, file_path=file_path,

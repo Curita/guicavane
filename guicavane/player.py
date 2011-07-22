@@ -10,6 +10,7 @@ import time
 import gobject
 import subprocess
 from megaupload import MegaFile
+from subcrawler import SubCrawler
 
 
 class Player(object):
@@ -138,6 +139,12 @@ class Player(object):
         try:
             self.pycavane.get_subtitle(to_download, filename=subs_filename,
                                        movie=is_movie)
+            show = self.gui.current_show
+            episode = self.gui.episode
+            subcrawler = SubCrawler()
+            subcrawler.search_subs(show + " " + episode[-1])
+            subcrawler.download_best_sub(filename)
+
         except Exception:
             self.set_status_message("Not subtitles found")
 
