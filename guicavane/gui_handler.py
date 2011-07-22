@@ -2,18 +2,11 @@
 # coding: utf-8
 
 """
-Guicavane: graphical user interface for the website cuevana.tv
-
-Uses gtk toolkit to provide the graphical interface of the website
-Author: Gonzalo Garcia (A.K.A j0hn) <j0hn.com.ar@gmail.com>
+Gui Handler. Module that takes care of the interface events.
 """
 
 import os
-import sys
 import gtk
-import time
-import string
-import gobject
 import urllib
 import webbrowser
 from unicodedata import normalize
@@ -26,7 +19,7 @@ from settings import Settings
 from threadrunner import GtkThreadRunner
 
 
-class Guicavane:
+class GUIHandler:
     """
     Main class, loads the gui and handles all events.
     """
@@ -195,8 +188,7 @@ class Guicavane:
         Called when the window closes.
         """
 
-        # Save the config to disk
-        self.config.save()
+        self.save_config()
 
         # We kill gtk
         gtk.main_quit()
@@ -339,6 +331,13 @@ class Guicavane:
 
         chooser.destroy()
 
+    def save_config(self):
+        """
+        Saves the config to disk.
+        """
+
+        self.config.save()
+
     def mark_selected(self, *args):
         """
         Called when the user clicks on Mark item in the context menu.
@@ -367,28 +366,6 @@ class Guicavane:
             model.set_value(iteration, FILE_VIEW_COLUMN_PIXBUF, ICON_FILE_MOVIE)
             self.config.remove_key("marks", selected_text)
 
-    def normalize_string(self, str):
-        """
-        Take a string and return a cleaned string ready to use for cuevana
-        """
-        repl_list = [(' ', '-'),
-                     ('.', ''),
-                     ('\'',''),
-                     ('?', ''),
-                     ('$', ''),
-                     ('#', ''),
-                     ('*', ''),
-                     ('!', ''),
-                     (':', '')]
-
-        uni_str = unicode(str, 'utf-8')
-        clean_str = normalize('NFKD',uni_str).encode('ASCII', 'ignore').lower()
-
-        for combo in repl_list:
-            clean_str = clean_str.replace(combo[0], combo[1])
-
-        return clean_str
-
     def open_in_cuevana(self, *args):
         """
         Open selected episode or movie on cuevana website.
@@ -397,8 +374,7 @@ class Guicavane:
         selected_text = get_selected_text(self.file_viewer,
                                           FILE_VIEW_COLUMN_TEXT)
 
-
-        if selected_text.count(" - "): #It's a serie
+        if selected_text.count(" - "):  # It's a serie
             link = "http://www.cuevana.tv/series/%s/%s/%s/"
             show = self.current_show
             season = self.current_seasson
@@ -412,8 +388,8 @@ class Guicavane:
                                                  show, season)
             assert data != None
 
-            show = self.normalize_string(show)
-            episode = self.normalize_string(data[2])
+            show = normalize_string(show)
+            episode = normalize_string(data[2])
 
             webbrowser.open(link % (data[0], show, episode))
         else:
@@ -421,7 +397,7 @@ class Guicavane:
             data = self.pycavane.movie_by_name(selected_text)
 
             print data[1]
-            movie = self.normalize_string(data[1])
+            movie = normalize_string(data[1])
 
             print movie
             webbrowser.open(link % (data[0], movie))
@@ -691,6 +667,7 @@ class Guicavane:
         """
 
         print error
+        pass
 
     def on_player_error(self, error):
         """
@@ -707,6 +684,7 @@ class Guicavane:
 
         self.sidebar.show()
         self.search_entry.set_text("")
+        self.name_filter.set_text("")
         self.path_label.set_text("")
         self.name_model.clear()
         self.background_task(self.pycavane.get_shows, self.show_shows,
@@ -721,6 +699,7 @@ class Guicavane:
         self.search_entry.grab_focus()
         self.sidebar.hide()
         self.path_label.set_text("")
+        self.name_filter.set_text("")
 
     def set_mode_favorites(self):
         """
@@ -730,6 +709,7 @@ class Guicavane:
         self.sidebar.show()
         self.search_entry.set_text("")
         self.path_label.set_text("")
+        self.name_filter.set_text("")
         self.name_model.clear()
         for favorite in self.config.get_key("favorites"):
             self.name_model.append([favorite])
@@ -782,3 +762,27 @@ def generic_visible_func(model, iteration, (entry, text_column)):
         return filtered_text in row_text
 
     return False
+
+
+def normalize_string(string):
+    """
+    Take a string and return a cleaned string ready to use for cuevana
+    """
+    repl_list = [(" ", "-"),
+                 (".", ""),
+                 (",", ""),
+                 ("'", ""),
+                 ("?", ""),
+                 ("$", ""),
+                 ("#", ""),
+                 ("*", ""),
+                 ("!", ""),
+                 (":", "")]
+
+    uni_str = unicode(string, "utf-8")
+    clean_str = normalize("NFKD", uni_str).encode("ASCII", "ignore").lower()
+
+    for combo in repl_list:
+        clean_str = clean_str.replace(combo[0], combo[1])
+
+    return clean_str
